@@ -1,0 +1,46 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-13
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Compile Swift Code
+        run: |
+          mkdir -p Payload/CacheManager.app
+          swiftc -sdk $(xcrun --sdk iphoneos --show-sdk-path) -target arm64-apple-ios15.0 ContentView.swift -o Payload/CacheManager.app/CacheManager
+          
+          cat << 'EOF' > Payload/CacheManager.app/Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>CacheManager</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.3105.cachemanager</string>
+              <key>CFBundleName</key>
+              <string>CacheManager</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>MinimumOSVersion</key>
+              <string>15.0</string>
+          </dict>
+          </plist>
+          EOF
+
+          zip -r CacheManager.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: CacheManager-IPA
+          path: CacheManager.ipa
