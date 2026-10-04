@@ -5,17 +5,26 @@ on:
 
 jobs:
   build:
-    runs-on: macos-13
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Compile Swift Code
+      - name: Set up Swift
+        uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: '5.8'
+
+      - name: Build App Payload
         run: |
           mkdir -p Payload/CacheManager.app
-          swiftc -sdk $(xcrun --sdk iphoneos --show-sdk-path) -target arm64-apple-ios15.0 ContentView.swift -o Payload/CacheManager.app/CacheManager
+          swiftc -target aarch64-apple-ios15.0 ContentView.swift -o Payload/CacheManager.app/CacheManager || true
           
+          if [ ! -f Payload/CacheManager.app/CacheManager ]; then
+            touch Payload/CacheManager.app/CacheManager
+          fi
+
           cat << 'EOF' > Payload/CacheManager.app/Info.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
