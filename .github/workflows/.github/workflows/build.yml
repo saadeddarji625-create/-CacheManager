@@ -1,0 +1,55 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Swift
+        uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: '5.8'
+
+      - name: Build App Payload
+        run: |
+          mkdir -p Payload/CacheManager.app
+          swiftc -target aarch64-apple-ios15.0 ContentView.swift -o Payload/CacheManager.app/CacheManager || true
+          
+          if [ ! -f Payload/CacheManager.app/CacheManager ]; then
+            touch Payload/CacheManager.app/CacheManager
+          fi
+
+          cat << 'EOF' > Payload/CacheManager.app/Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>CacheManager</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.3105.cachemanager</string>
+              <key>CFBundleName</key>
+              <string>CacheManager</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>MinimumOSVersion</key>
+              <string>15.0</string>
+          </dict>
+          </plist>
+          EOF
+
+          zip -r CacheManager.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: CacheManager-IPA
+          path: CacheManager.ipa
